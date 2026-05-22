@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zeuzi Live Stream Dashboard</title>
+    <style>
+        :root {
+            --neon-blue: #00f0ff;
+            --neon-pink: #ff007f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #000;
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* LAYER 1: Video Lalu Lintas Kanan (Di Belakang Jendela) */
+        .video-background {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 45%; /* Menyesuaikan posisi jendela kanan pada gambar */
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* LAYER 2: Gambar Studio Depan (Jendela Harus Transparan/Bolong) */
+        .studio-foreground {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('107973.png'); /* Nama file gambar studio portrait kamu */
+            background-size: cover;
+            background-position: center;
+            z-index: 2;
+            pointer-events: none; /* Klik sentuhan akan tembus ke tombol di bawahnya */
+        }
+
+        /* LAYER 3: Kontroler Interaktif di Dalam Layar Laptop */
+        .laptop-screen-ui {
+            position: absolute;
+            top: 61%;    /* Koordinat vertikal layar laptop di gambar */
+            left: 49.5%;  /* Koordinat horizontal layar laptop di gambar */
+            transform: translate(-50%, -50%);
+            width: 26%;  /* Lebar area dalam layar laptop */
+            height: 18%; /* Tinggi area dalam layar laptop */
+            z-index: 3;
+            background: rgba(10, 11, 18, 0.93);
+            border-radius: 4px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        /* Elemen teks info lagu di laptop */
+        .track-title {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+
+        .track-status {
+            font-size: 0.55rem;
+            color: var(--neon-blue);
+            text-align: center;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        /* Tombol Kontrol Mini */
+        .control-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-mini {
+            background: #161823;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-mini-play {
+            background: var(--neon-blue);
+            color: #000;
+            width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        /* Input Pencarian Kecil */
+        .search-box-mini {
+            display: flex;
+            gap: 4px;
+        }
+
+        .search-box-mini input {
+            flex: 1;
+            background: #07080c;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 4px 6px;
+            color: #fff;
+            border-radius: 4px;
+            outline: none;
+            font-size: 0.65rem;
+        }
+
+        .search-box-mini button {
+            background: var(--neon-pink);
+            color: #fff;
+            border: none;
+            padding: 0 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Mini VU Meter Equalizer di Laptop */
+        .mini-vu {
+            display: flex;
+            gap: 1px;
+            height: 12px;
+            align-items: flex-end;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .vu-bar {
+            flex: 1;
+            height: 2px;
+            background: var(--neon-blue);
+            transition: height 0.08s ease;
+        }
+
+        /* LAYER 4: Gelembung Akun Penonton Melayang */
+        .user-bubble {
+            position: absolute;
+            bottom: -60px;
+            background: rgba(0, 240, 255, 0.15);
+            border: 1px solid var(--neon-blue);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            animation: floatUp 6s linear forwards;
+        }
+
+        .user-bubble .avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--neon-pink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.65rem;
+            color: #fff;
+        }
+
+        .user-bubble .username {
+            font-size: 0.65rem;
+            color: #fff;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.8); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-110vh) scale(1.1); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <video class="video-background" autoplay loop muted playsinline>
+        <source src="lalulintas.mp4" type="video/mp4">
+    </video>
+
+    <div class="studio-foreground"></div>
+
+    <div id="youtube-audio-player" style="display: none;"></div>
+
+    <div class="laptop-screen-ui">
+        <div>
+            <div class="track-status" id="status">STUDIO READY</div>
+            <div class="track-title" id="title">TAP UNTUK MEMULAI</div>
+        </div>
+
+        <div class="mini-vu" id="mini-vu"></div>
+
+        <div class="control-row">
+            <button class="btn-mini" id="prev">⏮</button>
+            <button class="btn-mini btn-mini-play" id="play">▶</button>
+            <button class="btn-mini" id="next">⏭</button>
+        </div>
+
+        <div class="search-box-mini">
+            <input type="text" id="query" placeholder="Cari request musik...">
+            <button id="search-btn">GO</button>
+        </div>
+    </div>
+
+    <script>
+        let player, isPlaying = false, vuInterval;
+        const playBtn = document.getElementById('play');
+        const vuContainer = document.getElementById('mini-vu');
+
+        // Render 20 Batang VU Meter mini
+        for(let i=0; i<20; i++) {
+            let b = document.createElement('div');
+            b.className = 'vu-bar';
+            vuContainer.appendChild(b);
+        }
+        const vuBars = document.querySelectorAll('.vu-bar');
+
+        // Load YouTube Player API
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.getElementsByTagName('head')[0].appendChild(tag);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-audio-player', {
+                height: '0', width: '0',
+                playerVars: { 'playsinline': 1, 'controls': 0 },
+                events: { 'onReady': initLaptopConsole, 'onStateChange': handlePlayerState }
+            });
+        }
+
+        function initLaptopConsole() {
+            playBtn.addEventListener('click', () => {
+                if (isPlaying) player.pauseVideo(); else player.playVideo();
+            });
+            
+            document.getElementById('search-btn').addEventListener('click', searchTrack);
+
+            // Otomatis Fullscreen saat layar diketuk pertama kali
+            document.body.addEventListener('click', function() {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                }
+            }, { once: true });
+
+            // Simulasi gelembung penonton join otomatis berkala
+            setInterval(autoVisitorJoin, 7000);
+        }
+
+        function searchTrack() {
+            const query = document.getElementById('query').value.trim();
+            if(!query) return;
+            document.getElementById('title').innerText = "MENCARI...";
+            
+            fetch(`https://images${Math.floor(Math.random() * 3) + 1}-focus-opensocial.googleusercontent.com/gadgets/proxy?container=none&url=https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`)
+            .then(res => res.text()).then(html => {
+                const id = html.match(/"videoId":"([^"]+)"/)[1];
+                if(id) {
+                    player.loadVideoById(id);
+                    document.getElementById('title').innerText = query.toUpperCase();
+                    document.getElementById('status').innerText = "PLAYING ON AIR";
+                    document.getElementById('query').value = "";
+                }
+            }).catch(() => {
+                document.getElementById('title').innerText = "LINK ERROR";
+            });
+        }
+
+        function handlePlayerState(e) {
+            if (e.data == YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                playBtn.innerText = '⏸';
+                startVUEngine();
+            } else {
+                isPlaying = false;
+                playBtn.innerText = '▶';
+                stopVUEngine();
+            }
+        }
+
+        function startVUEngine() {
+            vuInterval = setInterval(() => {
+                vuBars.forEach(bar => {
+                    let h = Math.floor(Math.random() * 10) + 2;
+                    bar.style.height = h + 'px';
+                });
+            }, 80);
+        }
+
+        function stopVUEngine() {
+            clearInterval(vuInterval);
+            vuBars.forEach(bar => bar.style.height = '2px');
+        }
+
+        // Fungsi Gelembung Akun Masuk
+        function spawnUserBubble(username) {
+            const bubble = document.createElement('div');
+            bubble.className = 'user-bubble';
+            const initial = username.charAt(0).toUpperCase();
+            
+            bubble.innerHTML = `<div class="avatar">${initial}</div><div class="username">${username} joined!</div>`;
+            bubble.style.left = (Math.random() * 50 + 10) + '%';
+            
+            document.body.appendChild(bubble);
+            setTimeout(() => { bubble.remove(); }, 6000);
+        }
+
+        const dummyNames = ["Rian_Kurnia", "Nabila_Putri", "Arif_Studio", "Dimas_Remix", "Dewi_7k", "Bang_Jago"];
+        function autoVisitorJoin() {
+            if(isPlaying) {
+                const name = dummyNames[Math.floor(Math.random() * dummyNames.length)];
+                spawnUserBubble(name);
+            }
+        }
+    </script>
+</body>
+</html>
